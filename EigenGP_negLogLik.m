@@ -39,11 +39,23 @@ cholQ = chol(Q,'lower');
 cholKbb = chol(Kbb,'lower');
 % Ohter ocmmonly used terms
 lowerOpt.LT = true; upperOpt.LT = true; upperOpt.TRANSA = true;
-invCholQ_Kbx_invSigma2_t = linsolve(cholQ,Kxb'*t/sigma2,lowerOpt);
+invCholQ_Kbx_invSigma2 = linsolve(cholQ,Kxb'/sigma2,lowerOpt);
+invCholQ_Kbx_invSigma2_t = invCholQ_Kbx_invSigma2*t;
+diagInvCN = 1/sigma2-sum(invCholQ_Kbx_invSigma2.^2, 1)';
+invCN_t = t/sigma2-invCholQ_Kbx_invSigma2'*invCholQ_Kbx_invSigma2_t;
+
 % compute negative log likelihood function f = (ln|CN|+t'*CN*t+ln(2*pi))/2
 f = sum(log(diag(cholQ)))-sum(log(diag(cholKbb)))+(log(sigma2)*N+...
     t'*t/sigma2-invCholQ_Kbx_invSigma2_t'*invCholQ_Kbx_invSigma2_t...
     +N*log(2*pi))/2;
+
+%f = sum(log(diag(cholQ)))-sum(log(diag(cholKbb)))+(log(sigma2)*N)/2;
+
+
+% for debug
+%CN = Kxb*(Kbb\Kxb')+sigma2*diag(ones(N,1));
+%t_invCN_Kxb_invKbb = (CN\Kxb)/Kbb;
+
 
 %-----------------------
 % compute gradient
@@ -55,8 +67,19 @@ dlogA0 = 0;
 dlogA1 = 0;
 dlogA2 = 0;
 dB = zeros(M,D);
+% May use later
+invKbb_Kbx_invCN = linsolve(cholQ,linsolve(cholQ, Kxb', lowerOpt),upperOpt)/sigma2;
+%invKbb_Kbx_invCN_Kxb_invKbb = inv(Kbb) - inv(Q)
 % compute dlogSigma
-invCN_Kxb_invKbb = linsolve(cholQ,linsolve(cholQ, Kxb', lowerOpt),uppper)'/sigma2;
+dlogSigma = sigma2*(sum(diagInvCN)-invCN_t'*invCN_t);
+% compute dlogA0
+% part1 = tr(inv(CN)*dCN)
+% part2 = tr(inv(CN)*t*t'*inv(CN)*dCN)
+invKbb_Kbx_invCN_Kxb_invKbb_expF = linsolve(cholKbb,linsolve(cholKbb,expF,lowerOpt),upperOpt)...
+    -linsolve(cholQ,linsolve(cholQ,expF,lowerOpt),upperOpt);
+part1 = 2*sum(sum(invKbb_Kbx_invCN.*expH'))+trace(invKbb_Kbx_invCN_Kxb_invKbb_expF);
+
+dlogA0 = a0*part1/2;
 
 % combine all gradients in a vector
 df = [dlogSigma; dlogEta; dlogA0; dlogA1; dlogA2; reshape(dB,D*M,1)];
