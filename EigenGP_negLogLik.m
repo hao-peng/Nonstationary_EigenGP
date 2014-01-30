@@ -51,7 +51,6 @@ f = sum(log(diag(cholQ)))-sum(log(diag(cholKbb)))+(log(sigma2)*N+...
 
 %f = sum(log(diag(cholQ)))-sum(log(diag(cholKbb)))+(log(sigma2)*N)/2;
 
-
 % for debug
 %CN = Kxb*(Kbb\Kxb')+sigma2*diag(ones(N,1));
 %t_invCN_Kxb_invKbb = (CN\Kxb)/Kbb;
@@ -68,8 +67,11 @@ dlogA1 = 0;
 dlogA2 = 0;
 dB = zeros(M,D);
 % May use later
-invKbb_Kbx_invCN = linsolve(cholQ,linsolve(cholQ, Kxb', lowerOpt),upperOpt)/sigma2;
+invKbb_Kbx_invCN = linsolve(cholQ,invCholQ_Kbx_invSigma2,upperOpt);
 %invKbb_Kbx_invCN_Kxb_invKbb = inv(Kbb) - inv(Q)
+invKbb_Kbx_invCN_t = invKbb_Kbx_invCN*t;
+invKbb_Kbx_invCN_t_t_invCN = invKbb_Kbx_invCN_t*invCN_t';
+invKbb_Kbx_invCN_t_t_invCN_Kxb_invKbb = invKbb_Kbx_invCN_t*invKbb_Kbx_invCN_t';
 % compute dlogSigma
 dlogSigma = sigma2*(sum(diagInvCN)-invCN_t'*invCN_t);
 % compute dlogA0
@@ -77,9 +79,9 @@ dlogSigma = sigma2*(sum(diagInvCN)-invCN_t'*invCN_t);
 % part2 = tr(inv(CN)*t*t'*inv(CN)*dCN)
 invKbb_Kbx_invCN_Kxb_invKbb_expF = linsolve(cholKbb,linsolve(cholKbb,expF,lowerOpt),upperOpt)...
     -linsolve(cholQ,linsolve(cholQ,expF,lowerOpt),upperOpt);
-part1 = 2*sum(sum(invKbb_Kbx_invCN.*expH'))+trace(invKbb_Kbx_invCN_Kxb_invKbb_expF);
-
-dlogA0 = a0*part1/2;
+part1 = 2*sum(sum(invKbb_Kbx_invCN.*expH'))-trace(invKbb_Kbx_invCN_Kxb_invKbb_expF);
+part2 = 2*sum(sum(invKbb_Kbx_invCN_t_t_invCN.*expH'))-sum(sum(invKbb_Kbx_invCN_t_t_invCN_Kxb_invKbb.*expF'));
+dlogA0 = a0*(part1-part2)/2;
 
 % combine all gradients in a vector
 df = [dlogSigma; dlogEta; dlogA0; dlogA1; dlogA2; reshape(dB,D*M,1)];
