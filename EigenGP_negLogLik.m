@@ -27,11 +27,13 @@ B = reshape(param(5+D:D*M+D+4), M, D);
 % Some commonly used terms
 X2 = X.*X;
 B2 = B.*B;
+X_B = X*B';
+B_B = B*B';
 % Compute gram matrices
 expH = exp(bsxfun(@minus,bsxfun(@minus,2*scale_cols(X,eta)*B',X2*eta),(B2*eta)'));
-Kxb = a0*expH+a1*(X*B')+a2;
+Kxb = a0*expH+a1*(X_B)+a2;
 expF = exp(bsxfun(@minus,bsxfun(@minus,2*scale_cols(B,eta)*B',B2*eta),(B2*eta)'));
-Kbb = a0*expF+a1*(B*B')+a2; 
+Kbb = a0*expF+a1*(B_B)+a2; 
 % Define Q = Kbb + 1/sigma2 * Kbx *Kxb
 Q = Kbb+(Kxb'*Kxb)/sigma2;
 % Cholesky factorization for stable computation
@@ -68,20 +70,37 @@ dlogA2 = 0;
 dB = zeros(M,D);
 % May use later
 invKbb_Kbx_invCN = linsolve(cholQ,invCholQ_Kbx_invSigma2,upperOpt);
+invKbb_Kbx_invCN_Kxb_invKbb = linsolve(cholKbb, linsolve(cholKbb, Kxb'*invKbb_Kbx_invCN',lowerOpt),upperOpt)';
 %invKbb_Kbx_invCN_Kxb_invKbb = inv(Kbb) - inv(Q)
 invKbb_Kbx_invCN_t = invKbb_Kbx_invCN*t;
 invKbb_Kbx_invCN_t_t_invCN = invKbb_Kbx_invCN_t*invCN_t';
 invKbb_Kbx_invCN_t_t_invCN_Kxb_invKbb = invKbb_Kbx_invCN_t*invKbb_Kbx_invCN_t';
+
 % compute dlogSigma
 dlogSigma = sigma2*(sum(diagInvCN)-invCN_t'*invCN_t);
+
 % compute dlogA0
 % part1 = tr(inv(CN)*dCN)
+part1 = 2*sum(sum(invKbb_Kbx_invCN.*expH'))-sum(sum(invKbb_Kbx_invCN_Kxb_invKbb.*expF'));
+%part1 = 2*sum(sum(invKbb_Kbx_invCN.*expH'))-trace(invKbb_Kbx_invCN_Kxb_invKbb_expF);
 % part2 = tr(inv(CN)*t*t'*inv(CN)*dCN)
-invKbb_Kbx_invCN_Kxb_invKbb_expF = linsolve(cholKbb,linsolve(cholKbb,expF,lowerOpt),upperOpt)...
-    -linsolve(cholQ,linsolve(cholQ,expF,lowerOpt),upperOpt);
-part1 = 2*sum(sum(invKbb_Kbx_invCN.*expH'))-trace(invKbb_Kbx_invCN_Kxb_invKbb_expF);
 part2 = 2*sum(sum(invKbb_Kbx_invCN_t_t_invCN.*expH'))-sum(sum(invKbb_Kbx_invCN_t_t_invCN_Kxb_invKbb.*expF'));
 dlogA0 = a0*(part1-part2)/2;
+
+% compute dlogA1
+% part1 = tr(inv(CN)*dCN)
+part1 = 2*sum(sum(invKbb_Kbx_invCN.*X_B'))-sum(sum(invKbb_Kbx_invCN_Kxb_invKbb.*B_B));
+% part2 = tr(inv(CN)*t*t'*inv(CN)*dCN)
+part2 = 2*sum(sum(invKbb_Kbx_invCN_t_t_invCN.*X_B'))-sum(sum(invKbb_Kbx_invCN_t_t_invCN_Kxb_invKbb.*B_B'));
+dlogA1 = a1*(part1-part2)/2;
+
+% compute dlogA2
+% part1 = tr(inv(CN)*dCN)
+part1 = 2*sum(sum(invKbb_Kbx_invCN))-sum(sum(invKbb_Kbx_invCN_Kxb_invKbb));
+% part2 = tr(inv(CN)*t*t'*inv(CN)*dCN)
+part2 = 2*sum(sum(invKbb_Kbx_invCN_t_t_invCN))-sum(sum(invKbb_Kbx_invCN_t_t_invCN_Kxb_invKbb));
+dlogA2 = a1*(part1-part2)/2;
+
 
 % combine all gradients in a vector
 df = [dlogSigma; dlogEta; dlogA0; dlogA1; dlogA2; reshape(dB,D*M,1)];
