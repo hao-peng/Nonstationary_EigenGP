@@ -12,6 +12,8 @@ a0 = exp(model.logA0);
 a1 = exp(model.logA1);
 a2 = exp(model.logA2);
 B = model.B;
+% to avoid semi positive definite
+epsilon = 0;%1e-11;
 % for later use
 X2 = X.*X;
 B2 = B.*B;
@@ -23,7 +25,7 @@ B_eta = bsxfun(@times,B,eta');
 expH = exp(bsxfun(@minus,bsxfun(@minus,2*X_eta*B',X2*eta),(B2*eta)'));
 Kxb = a0*expH+a1*(X_B)+a2;
 expF = exp(bsxfun(@minus,bsxfun(@minus,2*B_eta*B',B2*eta),(B2*eta)'));
-Kbb = a0*expF+a1*(B_B)+a2;
+Kbb = a0*expF+a1*(B_B)+a2+epsilon*eye(size(B,1));
 % Define Q = Kbb + 1/sigma2 * Kbx *Kxb
 Q = Kbb+(Kxb'*Kxb)/sigma2;
 % Cholesky factorization for stable computation
@@ -53,7 +55,7 @@ while nact<Ns
     % Predictive mean
     mu(id) = Ksb * invKbb_Kbx_invCN_t;
     % Predictive variance
-    s2(id) = sum(linsolve(cholQ,linsolve(cholQ,Ksb',lowerOpt),upperOpt)'.*Ksb,2)+sigma2;
+    s2(id) = sum(linsolve(cholQ,linsolve(cholQ,Ksb',lowerOpt),upperOpt)'.*Ksb,2)+sigma2+epsilon;
     nact = id(end);
 end
 end

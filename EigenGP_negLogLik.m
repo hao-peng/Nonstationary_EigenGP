@@ -24,6 +24,8 @@ a0 = exp(param(2+D));
 a1 = exp(param(3+D));
 a2 = exp(param(4+D));
 B = reshape(param(5+D:D*M+D+4), M, D);
+% to avoid semi positive definite
+epsilon = 0;%1e-11;
 % Some commonly used terms
 X2 = X.*X;
 B2 = B.*B;
@@ -35,13 +37,14 @@ B_eta = bsxfun(@times,B,eta');
 expH = exp(bsxfun(@minus,bsxfun(@minus,2*X_eta*B',X2*eta),(B2*eta)'));
 Kxb = a0*expH+a1*(X_B)+a2;
 expF = exp(bsxfun(@minus,bsxfun(@minus,2*B_eta*B',B2*eta),(B2*eta)'));
-Kbb = a0*expF+a1*(B_B)+a2;
+Kbb = a0*expF+a1*(B_B)+a2 + epsilon*eye(M);
+
 % Define Q = Kbb + 1/sigma2 * Kbx *Kxb
 Q = Kbb+(Kxb'*Kxb)/sigma2;
 % Cholesky factorization for stable computation
-cholQ = chol(Q,'lower');
 cholKbb = chol(Kbb,'lower');
-% Ohter ocmmonly used terms
+cholQ = chol(Q,'lower');
+% Other commonly used terms
 lowerOpt.LT = true; upperOpt.LT = true; upperOpt.TRANSA = true;
 invCholQ_Kbx_invSigma2 = linsolve(cholQ,Kxb'/sigma2,lowerOpt);
 invCholQ_Kbx_invSigma2_t = invCholQ_Kbx_invSigma2*t;
