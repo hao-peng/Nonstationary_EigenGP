@@ -1,4 +1,4 @@
-function model = EigenGP_param2model(param, D, M)
+function model = EigenGPNS_param2model(param, D, M)
 if size(param, 1) ~= D*M+D+4
    error('The size of param does not match. (Reuiqred: %d; Given: %d)',...
        D*M+D+4, size(param,1)); 

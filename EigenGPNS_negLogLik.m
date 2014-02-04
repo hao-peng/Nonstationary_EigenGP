@@ -15,7 +15,7 @@
 %     N by 1 vector
 % M - number of basis point used
 
-function [f df] = EigenGP_negLogLik(param, X, t, M)
+function [f df] = EigenGPNS_negLogLik(param, X, t, M)
 [N D] = size(X);
 % load parameters
 sigma2 = exp(2*param(1));

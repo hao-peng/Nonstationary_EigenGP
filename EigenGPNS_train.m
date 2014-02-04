@@ -1,6 +1,6 @@
-% Train EigenGP model
+% Train EigenGPNS model
 % Parameters:
-% initModel - initial values for parameters of EigenGP
+% initModel - initial values for parameters of EigenGPNS
 %    initModel requires logSigma, logEta, logA0, logA1 and logA2
 %    if B is not initialized in initModel, we use kmeans+ to initialize it.
 % trainX - training data
@@ -10,7 +10,7 @@
 % M - number of basis used
 % nIter - maximum number of iterations for optimization
 
-function model = EigenGP_train(initModel, trainX, trainY, M, nIter)
+function model = EigenGPNS_train(initModel, trainX, trainY, M, nIter)
 % Get the dimension of input
 D = size(trainX, 2);
 
@@ -21,10 +21,10 @@ if ~isfield(initModel, 'B')
     initModel.B = B;
     clear IDX;
 end
-param = EigenGP_model2param(initModel, D, M);
+param = EigenGPNS_model2param(initModel, D, M);
 
-% Train EigenGP by minimizing the log likelihood.
-[new_param] = minimize(param, @(param) EigenGP_negLogLik(param, trainX, trainY, M), nIter);
-model = EigenGP_param2model(new_param, D, M);
+% Train EigenGPNS by minimizing the log likelihood.
+[new_param] = minimize(param, @(param) EigenGPNS_negLogLik(param, trainX, trainY, M), nIter);
+model = EigenGPNS_param2model(new_param, D, M);
 
 end

@@ -1,10 +1,10 @@
-% Use a EigenGP model to predict 
+% Use a EigenGPNS model to predict 
 % Parameters:
 % model - trained model
 % testX - test data
 %    N by D matrix. Each row is a data point.
 
-function [mu s2] = EigenGP_pred(model, X, t, testX)
+function [mu s2] = EigenGPNS_pred(model, X, t, testX)
 % Load model
 sigma2 = exp(model.logSigma*2);
 eta = exp(model.logEta);
