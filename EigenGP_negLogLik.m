@@ -35,7 +35,7 @@ B_eta = bsxfun(@times,B,eta');
 expH = exp(bsxfun(@minus,bsxfun(@minus,2*X_eta*B',X2*eta),(B2*eta)'));
 Kxb = a0*expH+a1*(X_B)+a2;
 expF = exp(bsxfun(@minus,bsxfun(@minus,2*B_eta*B',B2*eta),(B2*eta)'));
-Kbb = a0*expF+a1*(B_B)+a2; 
+Kbb = a0*expF+a1*(B_B)+a2;
 % Define Q = Kbb + 1/sigma2 * Kbx *Kxb
 Q = Kbb+(Kxb'*Kxb)/sigma2;
 % Cholesky factorization for stable computation

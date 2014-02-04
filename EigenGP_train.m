@@ -24,7 +24,7 @@ end
 param = EigenGP_model2param(initModel, D, M);
 
 % Train EigenGP by minimizing the log likelihood.
-[new_param] = minimize(param, @(param) EigenGP_Upd_kerB(param, trainX, trainY, M), nIter);
-model = EigenGP_param2mdoel(new_param, D, M);
+[new_param] = minimize(param, @(param) EigenGP_negLogLik(param, trainX, trainY, M), nIter);
+model = EigenGP_param2model(new_param, D, M);
 
 end
