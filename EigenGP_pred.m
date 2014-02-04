@@ -28,7 +28,6 @@ Kbb = a0*expF+a1*(B_B)+a2;
 Q = Kbb+(Kxb'*Kxb)/sigma2;
 % Cholesky factorization for stable computation
 cholQ = chol(Q,'lower');
-cholKbb = chol(Kbb,'lower');
 lowerOpt.LT = true; upperOpt.LT = true; upperOpt.TRANSA = true;
 invCholQ_Kbx_invSigma2 = linsolve(cholQ,Kxb'/sigma2,lowerOpt);
 invKbb_Kbx_invCN = linsolve(cholQ,invCholQ_Kbx_invSigma2,upperOpt);
@@ -54,10 +53,7 @@ while nact<Ns
     % Predictive mean
     mu(id) = Ksb * invKbb_Kbx_invCN_t;
     % Predictive variance
-    % S2temp = sum(Ksb/Kbb.*Ksb, 2)+epsi+sn2-sum(Ksb*beta.*Ksb, 2);
-    %iKbb_Kbs = linsolve (Chol_Kbb, linsolve (Chol_Kbb , Ksb', lower), upper);        
-    %s2(id) = sum(iKbb_Kbs'.*Ksb, 2) - sum(Ksb*beta.*Ksb, 2)  + sn2;
-
+    s2(id) = sum(linsolve(cholQ,linsolve(cholQ,Ksb',lowerOpt),upperOpt)'.*Ksb,2)+sigma2;
     nact = id(end);
 end
 end

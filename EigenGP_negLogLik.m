@@ -113,7 +113,7 @@ part1 = 2*(2*R1*X_eta-2*repmat(sum(R1,2),1,D).*B_eta+a1*invKbb_Kbx_invCN*X)...
 part2 = 2*(2*R2*X_eta-2*repmat(sum(R2,2),1,D).*B_eta+a1*invKbb_Kbx_invCN_t_t_invCN*X)...
     +(-4*S2*B_eta+4*repmat(sum(S2,2),1,D).*B_eta-2*a1*invKbb_Kbx_invCN_t_t_invCN_Kxb_invKbb*B);
 
-dB = reshape((part1-part2)/2, M*D, 1);
+dB = (part1-part2)/2;
 
 % combine all gradients in a vector
 df = [dlogSigma; dlogEta; dlogA0; dlogA1; dlogA2; reshape(dB,D*M,1)];
