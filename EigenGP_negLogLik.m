@@ -29,10 +29,12 @@ X2 = X.*X;
 B2 = B.*B;
 X_B = X*B';
 B_B = B*B';
+X_eta = bsxfun(@times,X,eta');
+B_eta = bsxfun(@times,B,eta');
 % Compute gram matrices
-expH = exp(bsxfun(@minus,bsxfun(@minus,2*scale_cols(X,eta)*B',X2*eta),(B2*eta)'));
+expH = exp(bsxfun(@minus,bsxfun(@minus,2*X_eta*B',X2*eta),(B2*eta)'));
 Kxb = a0*expH+a1*(X_B)+a2;
-expF = exp(bsxfun(@minus,bsxfun(@minus,2*scale_cols(B,eta)*B',B2*eta),(B2*eta)'));
+expF = exp(bsxfun(@minus,bsxfun(@minus,2*B_eta*B',B2*eta),(B2*eta)'));
 Kbb = a0*expF+a1*(B_B)+a2; 
 % Define Q = Kbb + 1/sigma2 * Kbx *Kxb
 Q = Kbb+(Kxb'*Kxb)/sigma2;
@@ -53,17 +55,10 @@ f = sum(log(diag(cholQ)))-sum(log(diag(cholKbb)))+(log(sigma2)*N+...
 
 %f = sum(log(diag(cholQ)))-sum(log(diag(cholKbb)))+(log(sigma2)*N)/2;
 
-% for debug
-%CN = Kxb*(Kbb\Kxb')+sigma2*diag(ones(N,1));
-%t_invCN_Kxb_invKbb = (CN\Kxb)/Kbb;
-
-
 %-----------------------
 % compute gradient
 %-----------------------
-% initialization gradients to be zeros
-dB = zeros(M,D);
-% May use later
+% prepare things that may be used later
 invKbb_Kbx_invCN = linsolve(cholQ,invCholQ_Kbx_invSigma2,upperOpt);
 invKbb_Kbx_invCN_Kxb_invKbb = linsolve(cholKbb, linsolve(cholKbb, Kxb'*invKbb_Kbx_invCN',lowerOpt),upperOpt)';
 %invKbb_Kbx_invCN_Kxb_invKbb = inv(Kbb) - inv(Q)
@@ -71,14 +66,15 @@ invKbb_Kbx_invCN_t = invKbb_Kbx_invCN*t;
 invKbb_Kbx_invCN_t_t_invCN = invKbb_Kbx_invCN_t*invCN_t';
 invKbb_Kbx_invCN_t_t_invCN_Kxb_invKbb = invKbb_Kbx_invCN_t*invKbb_Kbx_invCN_t';
 
-% compute dlogSigma
-dlogSigma = sigma2*(sum(diagInvCN)-invCN_t'*invCN_t);
-
-% compute dlogEta
 R1 = invKbb_Kbx_invCN.*(a0*expH)';
 S1 = invKbb_Kbx_invCN_Kxb_invKbb.*(a0*expF);
 R2 = invKbb_Kbx_invCN_t_t_invCN.*(a0*expH)';
 S2 = invKbb_Kbx_invCN_t_t_invCN_Kxb_invKbb.*(a0*expF);
+
+% compute dlogSigma
+dlogSigma = sigma2*(sum(diagInvCN)-invCN_t'*invCN_t);
+
+% compute dlogEta
 % part1 = tr(inv(CN)*dCN)
 part1 = 2*(2*sum(B'.*(X'*R1'), 2)-B2'*sum(R1,2)-X2'*sum(R1,1)')...
     +(-2*sum(B.*(S1*B),1)'+2*B2'*sum(S1, 1)');
@@ -107,8 +103,17 @@ dlogA1 = a1*(part1-part2)/2;
 part1 = 2*sum(sum(invKbb_Kbx_invCN))-sum(sum(invKbb_Kbx_invCN_Kxb_invKbb));
 % part2 = tr(inv(CN)*t*t'*inv(CN)*dCN)
 part2 = 2*sum(sum(invKbb_Kbx_invCN_t_t_invCN))-sum(sum(invKbb_Kbx_invCN_t_t_invCN_Kxb_invKbb));
-dlogA2 = a1*(part1-part2)/2;
+dlogA2 = a2*(part1-part2)/2;
 
+% compute dB
+% part1 = tr(inv(CN)*dCN)/2
+part1 = 2*(2*R1*X_eta-2*repmat(sum(R1,2),1,D).*B_eta+a1*invKbb_Kbx_invCN*X)...
+    +(-4*S1*B_eta+4*repmat(sum(S1,2),1,D).*B_eta-2*a1*invKbb_Kbx_invCN_Kxb_invKbb*B);
+
+part2 = 2*(2*R2*X_eta-2*repmat(sum(R2,2),1,D).*B_eta+a1*invKbb_Kbx_invCN_t_t_invCN*X)...
+    +(-4*S2*B_eta+4*repmat(sum(S2,2),1,D).*B_eta-2*a1*invKbb_Kbx_invCN_t_t_invCN_Kxb_invKbb*B);
+
+dB = reshape((part1-part2)/2, M*D, 1);
 
 % combine all gradients in a vector
 df = [dlogSigma; dlogEta; dlogA0; dlogA1; dlogA2; reshape(dB,D*M,1)];
