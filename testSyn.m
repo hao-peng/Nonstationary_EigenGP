@@ -1,30 +1,32 @@
 function test
-%load('synthetic.mat');
-load('syn2_1.mat');
+load('synthetic.mat');
+%load('syn2_2.mat');
 [N,D] = size(x);
 
-M = 20; % number of pseudo-inputs
+M = 5; % number of pseudo-inputs
 
-seed = 0;
+seed = 1;
 rand('seed',seed); randn('seed',seed);
 model.logSigma = log(var(y,1)/4);
 model.logEta = 2*log((max(x)-min(x))'*2);
 model.logA0 = log(var(y,1));
 %model.logA0 = log(0.1);
-model.logA1 = log(0.1);
-model.logA2 = log(0.2);
+model.logA1 = log(1e-1);
+model.logA2 = log(1e-1);
 %model.logA1 = log(var(y,1));
 %model.logA2 = log(var(y,1));
 %model.B = linspace(min(x), max(x), M);
 %model.B = x(randsample(N, M), :);
 
-trained_model = EigenGPNS_train(model, x, y, M, 100);
+trained_model = EigenGPNS_train(model, x, y, M, 5000);
 
 
 param = EigenGPNS_model2param(trained_model, D, M);
 
 EigenGPNS_negLogLik(param, x, y, M);
 
+
+save('model.mat');
 % index = 3;
 % range = param(index)-1:0.01:param(index)+1;
 % for i = 1:size(range,2);
