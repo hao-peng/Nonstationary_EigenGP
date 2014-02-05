@@ -41,33 +41,31 @@ Kbb = a0*expF+a1*(B_B)+a2 + epsilon*eye(M);
 
 % Define Q = Kbb + 1/sigma2 * Kbx *Kxb
 Q = Kbb+(Kxb'*Kxb)/sigma2;
-% Cholesky factorization for stable computation
-cholKbb = chol(Kbb,'lower');
-cholQ = chol(Q,'lower');
+
 % Other commonly used terms
-lowerOpt.LT = true; upperOpt.LT = true; upperOpt.TRANSA = true;
-invCholQ_Kbx_invSigma2 = linsolve(cholQ,Kxb'/sigma2,lowerOpt);
-invCholQ_Kbx_invSigma2_t = invCholQ_Kbx_invSigma2*t;
-diagInvCN = 1/sigma2-sum(invCholQ_Kbx_invSigma2.^2, 1)';
-invCN_t = t/sigma2-invCholQ_Kbx_invSigma2'*invCholQ_Kbx_invSigma2_t;
+Kbx_invSigma2 = Kxb'/sigma2;
+Kbx_invSigma2_t = Kbx_invSigma2*t;
+invKbb_Kbx_invCN = Q\Kbx_invSigma2;
+diagInvCN = 1/sigma2-sum(Kbx_invSigma2.*invKbb_Kbx_invCN,1)';
+invCN_t = t/sigma2-invKbb_Kbx_invCN'*Kbx_invSigma2_t ;
 
 % compute negative log likelihood function f = (ln|CN|+t'*CN*t+ln(2*pi))/2
-f = sum(log(diag(cholQ)))-sum(log(diag(cholKbb)))+(log(sigma2)*N+...
-    t'*t/sigma2-invCholQ_Kbx_invSigma2_t'*invCholQ_Kbx_invSigma2_t...
+f = (log(det(Q))-log(det(Kbb))+log(sigma2)*N+...
+    t'*t/sigma2-Kbx_invSigma2_t'*invKbb_Kbx_invCN*t...
     +N*log(2*pi))/2;
-
-%f = sum(log(diag(cholQ)))-sum(log(diag(cholKbb)))+(log(sigma2)*N)/2;
 
 %-----------------------
 % compute gradient
 %-----------------------
 % prepare things that may be used later
-invKbb_Kbx_invCN = linsolve(cholQ,invCholQ_Kbx_invSigma2,upperOpt);
-invKbb_Kbx_invCN_Kxb_invKbb = linsolve(cholKbb, linsolve(cholKbb, Kxb'*invKbb_Kbx_invCN',lowerOpt),upperOpt)';
-%invKbb_Kbx_invCN_Kxb_invKbb = inv(Kbb) - inv(Q)
+
+%invKbb_Kbx_invCN = Q\Kbx_invSigma2;
+%invKbb_Kbx_invCN_Kxb_invKbb = inv(Kbb) - inv(Q);
+invKbb_Kbx_invCN_Kxb_invKbb = (invKbb_Kbx_invCN*Kxb)/Kbb;
 invKbb_Kbx_invCN_t = invKbb_Kbx_invCN*t;
 invKbb_Kbx_invCN_t_t_invCN = invKbb_Kbx_invCN_t*invCN_t';
 invKbb_Kbx_invCN_t_t_invCN_Kxb_invKbb = invKbb_Kbx_invCN_t*invKbb_Kbx_invCN_t';
+
 
 R1 = invKbb_Kbx_invCN.*(a0*expH)';
 S1 = invKbb_Kbx_invCN_Kxb_invKbb.*(a0*expF);

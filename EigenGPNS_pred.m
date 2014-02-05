@@ -29,10 +29,8 @@ Kbb = a0*expF+a1*(B_B)+a2+epsilon*eye(size(B,1));
 % Define Q = Kbb + 1/sigma2 * Kbx *Kxb
 Q = Kbb+(Kxb'*Kxb)/sigma2;
 % Cholesky factorization for stable computation
-cholQ = chol(Q,'lower');
-lowerOpt.LT = true; upperOpt.LT = true; upperOpt.TRANSA = true;
-invCholQ_Kbx_invSigma2 = linsolve(cholQ,Kxb'/sigma2,lowerOpt);
-invKbb_Kbx_invCN = linsolve(cholQ,invCholQ_Kbx_invSigma2,upperOpt);
+Kbx_invSigma2 = Kxb'/sigma2;
+invKbb_Kbx_invCN = Q\Kbx_invSigma2;
 invKbb_Kbx_invCN_t = invKbb_Kbx_invCN*t;
 % number of test data points
 Ns = size(testX,1);
@@ -53,9 +51,9 @@ while nact<Ns
     Ksb = a0*exp(bsxfun(@minus,bsxfun(@minus,2*testX(id,:)*B_eta',testX(id,:).*testX(id,:)*eta),(B2*eta)'))...
             +a1*(testX(id,:)*B')+a2;
     % Predictive mean
-    mu(id) = Ksb * invKbb_Kbx_invCN_t;
+    mu(id) = real(Ksb * invKbb_Kbx_invCN_t);
     % Predictive variance
-    s2(id) = sum(linsolve(cholQ,linsolve(cholQ,Ksb',lowerOpt),upperOpt)'.*Ksb,2)+sigma2+epsilon;
+    s2(id) = real(sum(Ksb/Q.*Ksb,2)+sigma2+epsilon);
     nact = id(end);
 end
 end
