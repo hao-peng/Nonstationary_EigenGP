@@ -1,0 +1,35 @@
+\documentclass[]{article}
+\usepackage{graphicx}
+%opening
+\title{}
+\author{}
+
+\begin{document}
+
+%\maketitle
+
+\section{Synthetic dataset 1}
+\begin{table*}[h]
+\caption{NMSE Results} \label{table:basisfunction}
+\vspace{-.0in}
+\begin{center}
+\begin{tabular}{|c|c|c|}
+\hline
+Methods & NMSE in [-1, 7]& NMSE in [0, 6] \\
+\hline 
+\hline
+EigenGP (ARD) &  $ 0.019 \pm 0.0018$ & $0.012\pm0.0031$\\
+\hline
+EigenGP (ARD+linear)& $0.041\pm0.0051$  & $0.0080\pm0.0012$\\
+\hline 
+\end{tabular}
+\end{center}
+\vspace{-.0in}
+\end{table*}
+The ARD+linear model does not perform well outside the range of training data but performs 
+well inside. The following figure illustrate the effect.
+
+\includegraphics[scale=0.8]{../syn1/fig/syn_EigenGP_kerB_ns_M5_10.pdf}
+
+\section{Synthetic dataset 2}
+\end{document}
